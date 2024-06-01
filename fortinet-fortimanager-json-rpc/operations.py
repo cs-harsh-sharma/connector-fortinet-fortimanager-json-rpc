@@ -66,7 +66,7 @@ def json_rpc_delete(config: dict, params: dict) -> dict:
 
 
 def json_rpc_freeform(config: dict, params: dict) -> dict:
-    action = "freeform"
+    action = "free_form"
     try:
         response = perform_rpc_action(action, config, params)
         return response
@@ -80,5 +80,6 @@ operations = {
     'json_rpc_get': json_rpc_get,
     'json_rpc_execute': json_rpc_execute,
     'json_rpc_delete': json_rpc_delete,
-    'json_rpc_freeform': json_rpc_freeform
+    'json_rpc_freeform': json_rpc_freeform,
+    'check_health': _check_health
 }

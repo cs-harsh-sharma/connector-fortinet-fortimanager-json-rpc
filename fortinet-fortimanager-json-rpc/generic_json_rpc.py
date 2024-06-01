@@ -60,6 +60,11 @@ def perform_rpc_action(action: str, config: dict, params: dict) -> dict:
             action_func = getattr(fmg, action)
             data = parse_data(params.get("data", {}))
             url = params.get("url")
+            # To handle locking adoms when freeform action is used, i will pick the first url found and lock that adom.
+            if action == "free_form":
+                url = data.get("data", [])[0].get("url", url)
+            else:
+                url = params.get("url")
             adom = parse_adom_item_regex(url)
             response = {}
 
@@ -67,7 +72,11 @@ def perform_rpc_action(action: str, config: dict, params: dict) -> dict:
             if action not in ["get"] and fmg._lock_ctx.uses_workspace:
                 fmg.lock_adom(adom)
                 # Run the action
-                status, action_response = action_func(url=url, **data)
+                if action == "free_form":
+                    method = params.get("method")
+                    status, action_response = action_func(method, **data)
+                else:
+                    status, action_response = action_func(url=url, **data)
                 fmg.commit_changes(adom)
             else:
                 status, action_response = action_func(url=url, **data)
@@ -75,7 +84,8 @@ def perform_rpc_action(action: str, config: dict, params: dict) -> dict:
             # If the action is execute and track_task is set to True, track the task
             if action == 'execute' and params.get("track_task", False):
                 task = action_response.get('task') or action_response.get('taskid')
-                status, task_response = fmg.track_task(task)
+                task_timeout = int(params.get("task_timeout", 120)) or 120
+                status, task_response = fmg.track_task(task, timeout=task_timeout)
                 response["task_response"] = task_response
                 if fmg._lock_ctx.uses_workspace:
                     fmg.commit_changes(adom)
