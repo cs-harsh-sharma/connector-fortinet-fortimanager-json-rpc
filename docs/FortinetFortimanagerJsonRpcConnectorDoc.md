@@ -4,15 +4,15 @@ The Fortinet FortiManager JSON RPC Connector is an advanced connector with freef
 
 ### Version information
 
-Connector Version: 1.0.2
+Connector Version: 1.0.4
 
 
 Authored By: Fortinet CSE
 
 Certified: No
 
-## Release Notes for version 1.0.2
-Following enhancements have been made to the Fortinet FortiManager JSON RPC Connector in version 1.0.2:
+## Release Notes for version 1.0.4
+Following enhancements have been made to the Fortinet FortiManager JSON RPC Connector in version 1.0.4:
 <ul>
 <li><p>Added support for FortiManager Cloud Authentication</p>
 </li>

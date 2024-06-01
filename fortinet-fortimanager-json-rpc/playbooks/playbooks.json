@@ -4,7 +4,7 @@
     {
       "uuid": "c11d3444-7674-4d31-ba69-eae27af4c7f6",
       "@type": "WorkflowCollection",
-      "name": "Sample - Fortinet FortiManager JSON RPC - 1.0.3",
+      "name": "Sample - Fortinet FortiManager JSON RPC - 1.0.4",
       "description": "The Fortinet FortiManager JSON RPC Connector is an advanced connector with freeform actions to use the JSON-RPC API directly. This connector puts the onus on the user to understand the FortiManager API. To use the connector that simplify actions please see the original Fortinet FortiManager Connector",
       "visible": true,
       "image": null,
