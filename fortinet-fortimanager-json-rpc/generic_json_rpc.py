@@ -5,12 +5,18 @@
   Copyright end """
 
 import json
+import random
 import re
+import time
 from typing import Union
+
 from connectors.core.connector import get_logger, ConnectorError
 from pyFMG.fortimgr import FortiManager
 
 logger = get_logger('fortinet-fortimanager-json-rpc')
+
+# Set the maximum number of retries to acquire a lock on an ADOM
+MAX_RETRY_LIMIT = 1500
 
 
 def get_config(config: dict) -> tuple:
@@ -60,17 +66,32 @@ def perform_rpc_action(action: str, config: dict, params: dict) -> dict:
             action_func = getattr(fmg, action)
             data = parse_data(params.get("data", {}))
             url = params.get("url")
-            # To handle locking adoms when freeform action is used, i will pick the first url found and lock that adom.
+            # To handle locking ADOM's when freeform action is used, I will pick the first url found and lock that adom.
             if action == "free_form":
                 url = data.get("data", [])[0].get("url", url)
-            else:
-                url = params.get("url")
             adom = parse_adom_item_regex(url)
             response = {}
 
             # Lock the ADOM if the action is not a get or execute and the lock context uses the workspace
             if action not in ["get"] and fmg._lock_ctx.uses_workspace:
-                fmg.lock_adom(adom)
+                for attempt in range(MAX_RETRY_LIMIT):
+                    status, lock_response = fmg.lock_adom(adom)
+                    # If the lock was acquired, break the loop
+                    # status == -9 means that the url is invalid. this is a workaround for a pyFMG bug where uses_workspace is True when it should be False
+                    if status == 0 or status == -9:
+                        break
+                    else:
+
+                        if attempt < MAX_RETRY_LIMIT - 1:
+                            # Sleep for a random amount of time between 1 and 10 seconds
+                            sleep_time = random.randint(1, 10)
+                            logger.debug(
+                                f"Failed to acquire lock for ADOM:{adom} to use URL:{url} with PAYLOAD:{data}. Sleeping {sleep_time} seconds and retrying..."
+                            )
+                            time.sleep(sleep_time)
+                        else:
+                            logger.error(
+                                f"Max retry limit reached. Could not acquire lock for ADOM:{adom} to use URL:{url} with PAYLOAD:{data}.")
                 # Run the action
                 if action == "free_form":
                     method = params.get("method")
@@ -78,8 +99,14 @@ def perform_rpc_action(action: str, config: dict, params: dict) -> dict:
                 else:
                     status, action_response = action_func(url=url, **data)
                 fmg.commit_changes(adom)
+                # Consider unlocking the adom here, but not sure if it's safe to do so if there is a task to track
+                # Not unlocking here could potentially cause delays in other workers that need to lock the same adom
             else:
-                status, action_response = action_func(url=url, **data)
+                if action == "free_form":
+                    method = params.get("method")
+                    status, action_response = action_func(method, **data)
+                else:
+                    status, action_response = action_func(url=url, **data)
             response[f"{action}_response"] = action_response
             # If the action is execute and track_task is set to True, track the task
             if action == 'execute' and params.get("track_task", False):
@@ -87,6 +114,7 @@ def perform_rpc_action(action: str, config: dict, params: dict) -> dict:
                 task_timeout = int(params.get("task_timeout", 120)) or 120
                 status, task_response = fmg.track_task(task, timeout=task_timeout)
                 response["task_response"] = task_response
+                # I'm not sure if we need to commit changes here after the task is tracked, but leaving it here for now
                 if fmg._lock_ctx.uses_workspace:
                     fmg.commit_changes(adom)
 
