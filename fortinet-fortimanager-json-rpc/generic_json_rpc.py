@@ -49,10 +49,15 @@ def parse_data(data: Union[list, bool, str, dict]):
     return data
 
 
-def parse_adom_item_regex(url: str) -> str:
+def parse_adom_from_input(url: str, data: Union[list, dict]) -> str:
     match = re.search(r'/adom/([^/]+)/', url)
     if match:
         return match.group(1)  # Return the matched group after 'adom'
+    # If the adom is not found in the URL, check the data
+    elif isinstance(data, dict) and data.get('adom'):
+        return data['adom']
+    elif isinstance(data, list) and data[0].get('adom'):
+        return data[0]['adom']
     else:
         return "global"
 
@@ -69,7 +74,7 @@ def perform_rpc_action(action: str, config: dict, params: dict) -> dict:
             # To handle locking ADOM's when freeform action is used, I will pick the first url found and lock that adom.
             if action == "free_form":
                 url = data.get("data", [])[0].get("url", url)
-            adom = parse_adom_item_regex(url)
+            adom = parse_adom_from_input(url, data)
             response = {}
 
             # Lock the ADOM if the action is not a get or execute and the lock context uses the workspace
@@ -79,9 +84,9 @@ def perform_rpc_action(action: str, config: dict, params: dict) -> dict:
                     # If the lock was acquired, break the loop
                     # status == -9 means that the url is invalid. this is a workaround for a pyFMG bug where uses_workspace is True when it should be False
                     if status == 0 or status == -9:
+                        logger.debug(f"Acquired lock for ADOM:{adom} to use URL:{url} with PAYLOAD:{data}.")
                         break
                     else:
-
                         if attempt < MAX_RETRY_LIMIT - 1:
                             # Sleep for a random amount of time between 1 and 10 seconds
                             sleep_time = random.randint(1, 10)
@@ -117,6 +122,7 @@ def perform_rpc_action(action: str, config: dict, params: dict) -> dict:
                 # I'm not sure if we need to commit changes here after the task is tracked, but leaving it here for now
                 if fmg._lock_ctx.uses_workspace:
                     fmg.commit_changes(adom)
+                    fmg.unlock_adom(adom)
 
             response["status"] = status
             logger.debug(response)
