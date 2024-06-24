@@ -279,6 +279,27 @@ def test_rpc_freeform():
         "data": multi_data
     }
 
+#     {
+#         "method": "add",
+#         "data": [
+#             {
+#                 "url": "/pm/config/adom/root/obj/firewall/address/",
+#                 "data": [
+#                     {
+#                         "name": "host-172-23-200-121",
+#                         "subnet": [
+#                             "172.23.200.121",
+#                             "255.255.255.255"
+#                         ]
+#                     }
+#                 ]
+#             },
+#             {
+#                 "url": "/pm/config/adom/root/obj/firewall/address/",
+#                 "data": [
+#                 ...
+#
+
     response = operations['json_rpc_freeform'](config, params)
 
     assert "free_form_response" in response, "Response missing 'free_form_response' key"
