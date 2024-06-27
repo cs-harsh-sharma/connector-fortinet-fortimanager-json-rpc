@@ -6,12 +6,18 @@ Copyright end
 """
 
 import json
+import random
 import re
+import time
 from typing import Union
+
 from connectors.core.connector import get_logger, ConnectorError
 from pyFMG.fortimgr import FortiManager
 
 logger = get_logger('fortinet-fortimanager-json-rpc')
+
+# Set the maximum number of retries to acquire a lock on an ADOM
+MAX_RETRY_LIMIT = 1500
 
 
 def get_config(config: dict) -> tuple:
@@ -32,11 +38,9 @@ def clean_server_url(server_url: str, port: Union[str, None]) -> str:
 def parse_data(data: Union[list, bool, str, dict]):
     if isinstance(data, str):
         try:
-            if data == "":
-                return {}
-            return json.loads(data)
+            return json.loads(data) if data else {}
         except json.JSONDecodeError as e:
-            raise ConnectorError(f"Could not parse json: {e}")
+            raise ConnectorError(f"Could not parse JSON: {e}")
     if isinstance(data, list):
         return {"data": data}
     if not isinstance(data, dict):
@@ -44,12 +48,54 @@ def parse_data(data: Union[list, bool, str, dict]):
     return data
 
 
-def parse_adom_item_regex(url: str) -> str:
+def parse_adom_from_input(url: str, data: Union[list, dict]) -> str:
     match = re.search(r'/adom/([^/]+)/', url)
     if match:
-        return match.group(1)  # Return the matched group after 'adom'
-    else:
-        return "global"
+        return match.group(1)
+
+    # If the adom is not found in the URL, check the data
+    def extract_adom(nested_data):
+        if isinstance(nested_data, dict):
+            if 'url' in nested_data:
+                nested_match = re.search(r'/adom/([^/]+)/', nested_data['url'])
+                if nested_match:
+                    return nested_match.group(1)
+            if 'adom' in nested_data:
+                return nested_data['adom']
+            for key, value in nested_data.items():
+                result = extract_adom(value)
+                if result:
+                    return result
+        elif isinstance(nested_data, list):
+            for item in nested_data:
+                result = extract_adom(item)
+                if result:
+                    return result
+        return None
+
+    adom = extract_adom(data.get("data"))
+    return adom if adom else "global"
+
+
+def lock_adom(fmg, adom, url, data):
+    for attempt in range(MAX_RETRY_LIMIT):
+        status, _ = fmg.lock_adom(adom)
+        # If the lock was acquired, break the loop
+        # status == -9 means that the url is invalid. this is a workaround for a pyFMG bug where uses_workspace is True when it should be False
+        if status == 0 or status == -9:
+            logger.debug(f"Acquired lock for ADOM: {adom} using URL: {url} with PAYLOAD: {data}.")
+            return True
+        if attempt < MAX_RETRY_LIMIT - 1:
+            # Sleep for a random amount of time between 1 and 10 seconds
+            sleep_time = random.randint(1, 10)
+            logger.debug(
+                f"Failed to acquire lock for ADOM: {adom} using URL: {url} with PAYLOAD: {data}. Sleeping {sleep_time} seconds and retrying...")
+            time.sleep(sleep_time)
+        else:
+            logger.error(
+                f"Max retry limit reached. Could not acquire lock for ADOM: {adom} using URL: {url} with PAYLOAD: {data}.")
+            return False
+    return False
 
 
 def perform_rpc_action(action: str, config: dict, params: dict) -> dict:
@@ -61,26 +107,34 @@ def perform_rpc_action(action: str, config: dict, params: dict) -> dict:
             action_func = getattr(fmg, action)
             data = parse_data(params.get("data", {}))
             url = params.get("url")
-            # To handle locking adoms when freeform action is used, i will pick the first url found and lock that adom.
+            # To handle locking ADOM's when freeform action is used, I will pick the first url found and lock that adom.
             if action == "free_form":
                 url = data.get("data", [])[0].get("url", url)
-            else:
-                url = params.get("url")
-            adom = parse_adom_item_regex(url)
+            adom = parse_adom_from_input(url, data)
             response = {}
 
             # Lock the ADOM if the action is not a get or execute and the lock context uses the workspace
             if action not in ["get"] and fmg._lock_ctx.uses_workspace:
-                fmg.lock_adom(adom)
-                # Run the action
+                if not lock_adom(fmg, adom, url, data):
+                    raise ConnectorError(f"Failed to lock ADOM: {adom}")
+
                 if action == "free_form":
                     method = params.get("method")
                     status, action_response = action_func(method, **data)
                 else:
                     status, action_response = action_func(url=url, **data)
-                fmg.commit_changes(adom)
             else:
-                status, action_response = action_func(url=url, **data)
+                if action == "free_form":
+                    method = params.get("method")
+                    status, action_response = action_func(method, **data)
+                else:
+                    status, action_response = action_func(url=url, **data)
+
+            if fmg._lock_ctx.uses_workspace and action != "get":
+                fmg.commit_changes(adom)
+                # Consider unlocking the adom here, but not sure if it's safe to do so if there is a task to track
+                # Not unlocking here could potentially cause delays in other workers that need to lock the same adom
+
             response[f"{action}_response"] = action_response
             # If the action is execute and track_task is set to True, track the task
             if action == 'execute' and params.get("track_task", False):
@@ -88,8 +142,10 @@ def perform_rpc_action(action: str, config: dict, params: dict) -> dict:
                 task_timeout = int(params.get("task_timeout", 120)) or 120
                 status, task_response = fmg.track_task(task, timeout=task_timeout)
                 response["task_response"] = task_response
+                # I'm not sure if we need to commit changes here after the task is tracked, but leaving it here for now
                 if fmg._lock_ctx.uses_workspace:
                     fmg.commit_changes(adom)
+                    fmg.unlock_adom(adom)
 
             response["status"] = status
             logger.debug(response)

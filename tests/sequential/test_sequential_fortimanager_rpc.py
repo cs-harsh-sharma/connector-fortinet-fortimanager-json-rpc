@@ -1,18 +1,20 @@
 import importlib
 import os
 import sys
-from pathlib import Path
 
 import pytest
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
-env_path = Path(__file__).resolve().parent.parent / 'tests' / '.env'
-load_dotenv(dotenv_path=env_path)
+# Load environment variables from .env file in the parent directory
+current_directory = os.path.dirname(__file__)
+parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))
+grandparent_directory = os.path.abspath(os.path.join(parent_directory, os.pardir))
 
-# Add the parent directory to the system path
-parent_dir = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(parent_dir))
+# Add the grandparent directory to the system path
+sys.path.insert(0, str(grandparent_directory))
+
+env_path = os.path.join(parent_directory, '.env')
+load_dotenv(dotenv_path=env_path)
 
 # Import the module dynamically
 module_name = "fortinet-fortimanager-json-rpc.operations"
@@ -63,11 +65,10 @@ def test_fail_check_health():
     try:
         bad_config = config.copy()
         bad_config['address'] = 'https://invalid-address'
-        bad_config['port'] = 123
+        bad_config['port'] = "123"
         response = operations['check_health'](bad_config)
-        print(response)
         assert False, "Expected error for invalid address"
-    except my_package.ConnectorError as e:
+    except my_package.ConnectorError:
         assert True, f"Expected error for invalid address"
 
 
@@ -277,6 +278,27 @@ def test_rpc_freeform():
         "method": "add",
         "data": multi_data
     }
+
+#     {
+#         "method": "add",
+#         "data": [
+#             {
+#                 "url": "/pm/config/adom/root/obj/firewall/address/",
+#                 "data": [
+#                     {
+#                         "name": "host-172-23-200-121",
+#                         "subnet": [
+#                             "172.23.200.121",
+#                             "255.255.255.255"
+#                         ]
+#                     }
+#                 ]
+#             },
+#             {
+#                 "url": "/pm/config/adom/root/obj/firewall/address/",
+#                 "data": [
+#                 ...
+#
 
     response = operations['json_rpc_freeform'](config, params)
 
