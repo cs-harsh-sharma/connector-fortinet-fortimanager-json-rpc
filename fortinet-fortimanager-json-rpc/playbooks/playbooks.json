@@ -68,7 +68,7 @@
                 "name": "Fortinet FortiManager JSON RPC",
                 "config": "''",
                 "params": [],
-                "version": "1.0.3",
+                "version": "1.0.4",
                 "connector": "fortinet-fortimanager-json-rpc",
                 "operation": "json_rpc_add",
                 "operationTitle": "JSON RPC Add"
@@ -145,7 +145,7 @@
                 "name": "Fortinet FortiManager JSON RPC",
                 "config": "''",
                 "params": [],
-                "version": "1.0.3",
+                "version": "1.0.4",
                 "connector": "fortinet-fortimanager-json-rpc",
                 "operation": "json_rpc_set",
                 "operationTitle": "JSON RPC Set"
@@ -225,7 +225,7 @@
                   "url": "/dvmdb/device",
                   "data": ""
                 },
-                "version": "1.0.3",
+                "version": "1.0.4",
                 "connector": "fortinet-fortimanager-json-rpc",
                 "operation": "json_rpc_get",
                 "operationTitle": "JSON RPC Get"
@@ -304,7 +304,7 @@
                 "params": {
                   "track_task": false
                 },
-                "version": "1.0.3",
+                "version": "1.0.4",
                 "connector": "fortinet-fortimanager-json-rpc",
                 "operation": "json_rpc_execute",
                 "operationTitle": "JSON RPC Exec"
@@ -381,7 +381,7 @@
                 "name": "Fortinet FortiManager JSON RPC",
                 "config": "''",
                 "params": [],
-                "version": "1.0.3",
+                "version": "1.0.4",
                 "connector": "fortinet-fortimanager-json-rpc",
                 "operation": "json_rpc_delete",
                 "operationTitle": "JSON RPC Delete"
@@ -458,7 +458,7 @@
                 "name": "Fortinet FortiManager JSON RPC",
                 "config": "''",
                 "params": [],
-                "version": "1.0.3",
+                "version": "1.0.4",
                 "connector": "fortinet-fortimanager-json-rpc",
                 "operation": "json_rpc_freeform",
                 "operationTitle": "JSON RPC Freeform"
