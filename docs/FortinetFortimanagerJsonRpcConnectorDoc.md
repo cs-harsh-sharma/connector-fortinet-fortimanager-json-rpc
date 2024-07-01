@@ -16,9 +16,9 @@ Certified: No
 Following enhancements have been made to the Fortinet FortiManager JSON RPC Connector in version 1.0.4:
 
 <ul>
-<li>Implement support for auto locking of FortiManager Adoms if workspaces are enabled.</li>
-
-<li>Made the "payload" parameter optional for the get action.</li>
+<li>Added support to specify a task timeout on the execute action.</li>
+<li>Fixed issue with the freeform action.</li>
+<li>Added testing framework for all actions.</li>
 </ul>
 
 ## Installing the connector
@@ -117,7 +117,7 @@ The following automated operations can be included in playbooks and you can also
 
  The output contains a non-dictionary value.
 ## Included playbooks
-The `Sample - fortinet-fortimanager-json-rpc - 1.0.3` playbook collection comes bundled with the Fortinet FortiManager JSON RPC connector. These playbooks contain steps using which you can perform all supported actions. You can see bundled playbooks in the **Automation** > **Playbooks** section in FortiSOAR&trade; after importing the Fortinet FortiManager JSON RPC connector.
+The `Sample - fortinet-fortimanager-json-rpc - 1.0.4` playbook collection comes bundled with the Fortinet FortiManager JSON RPC connector. These playbooks contain steps using which you can perform all supported actions. You can see bundled playbooks in the **Automation** > **Playbooks** section in FortiSOAR&trade; after importing the Fortinet FortiManager JSON RPC connector.
 
 - JSON RPC Add
 - JSON RPC Delete
