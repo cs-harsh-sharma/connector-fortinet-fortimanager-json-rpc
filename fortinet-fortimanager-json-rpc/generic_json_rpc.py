@@ -72,7 +72,7 @@ def parse_adom_from_input(url: str, data: Union[list, dict]) -> str:
                     return result
         return None
 
-    adom = extract_adom(data.get("data"))
+    adom = extract_adom(data)
     return adom if adom else "global"
 
 
@@ -80,10 +80,19 @@ def lock_adom(fmg, adom, url, data):
     for attempt in range(MAX_RETRY_LIMIT):
         status, _ = fmg.lock_adom(adom)
         # If the lock was acquired, break the loop
-        # status == -9 means that the url is invalid. this is a workaround for a pyFMG bug where uses_workspace is True when it should be False
-        if status == 0 or status == -9:
+        if status == 0:
             logger.debug(f"Acquired lock for ADOM: {adom} using URL: {url} with PAYLOAD: {data}.")
             return True
+        # status == -9 means that the command for the url is invalid. This happens when an adom is attempted to be
+        # locked when workspaces isn't enabled. This is a workaround for a pyFMG bug where uses_workspace is True when
+        # it should be False. That happens because pyFMG checks a 0 or 1 int, but verbose mode returns a string.
+        if status == -9:
+            logger.debug(f"Workspaces not enabled. Locking ADOM: {adom} not required.")
+            return True
+        # status == -6 when URL is invalid. This could occur when a nonexistent adom is attempted to be locked.
+        if status == -6:
+            logger.error(f"URL is invalid. ADOM: {adom} does not exist.")
+            return False
         if attempt < MAX_RETRY_LIMIT - 1:
             # Sleep for a random amount of time between 1 and 10 seconds
             sleep_time = random.randint(1, 10)

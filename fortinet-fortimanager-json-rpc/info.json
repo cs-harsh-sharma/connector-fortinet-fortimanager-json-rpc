@@ -1,13 +1,13 @@
 {
   "name": "fortinet-fortimanager-json-rpc",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "label": "Fortinet FortiManager JSON RPC",
   "description": "The Fortinet FortiManager JSON RPC Connector is an advanced connector with freeform actions to use the JSON-RPC API directly. This connector puts the onus on the user to understand the FortiManager API. To use the connector that simplify actions please see the original Fortinet FortiManager Connector",
   "publisher": "Fortinet CSE",
   "cs_approved": false,
   "cs_compatible": true,
   "category": "Centralized Security Management",
-  "help_online": "https://github.com/fortinet-fortisoar/connector-fortinet-fortimanager-json-rpc/blob/release/1.0.4/docs/FortinetFortimanagerJsonRpcConnectorDoc.md",
+  "help_online": "https://github.com/fortinet-fortisoar/connector-fortinet-fortimanager-json-rpc/blob/release/1.0.5/docs/FortinetFortimanagerJsonRpcConnectorDoc.md",
   "icon_small_name": "FortiManager_small.png",
   "icon_large_name": "FortiManager_medium.png",
   "configuration": {
@@ -315,7 +315,7 @@
             "delete",
             "replace",
             "clone",
-            "execute",
+            "exec",
             "move",
             "unset"
           ]

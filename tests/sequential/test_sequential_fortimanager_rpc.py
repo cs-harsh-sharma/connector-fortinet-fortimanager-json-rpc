@@ -16,12 +16,18 @@ sys.path.insert(0, str(grandparent_directory))
 env_path = os.path.join(parent_directory, '.env')
 load_dotenv(dotenv_path=env_path)
 
-# Import the module dynamically
-module_name = "fortinet-fortimanager-json-rpc.operations"
-my_package = importlib.import_module(module_name)
-
+# Import the operations dynamically
+operations_module_name = "fortinet-fortimanager-json-rpc.operations"
+operations_package = importlib.import_module(operations_module_name)
 # Import the operations dictionary from the module
-operations = my_package.operations
+operations = operations_package.operations
+
+# import the generic_json_rpc module
+generic_json_rpc_module_name = "fortinet-fortimanager-json-rpc.generic_json_rpc"
+generic_json_rpc_package = importlib.import_module(generic_json_rpc_module_name)
+# import the generic_json_rpc functions
+parse_adom_from_input = generic_json_rpc_package.parse_adom_from_input
+parse_data = generic_json_rpc_package.parse_data
 
 config = {
     "username": os.getenv("USERNAME"),
@@ -57,7 +63,7 @@ def test_check_health():
     try:
         response = operations['check_health'](config)
         assert response, "Expected True for health check"
-    except my_package.ConnectorError as e:
+    except operations_package.ConnectorError as e:
         assert False, f"Unexpected error: {e}"
 
 
@@ -68,7 +74,7 @@ def test_fail_check_health():
         bad_config['port'] = "123"
         response = operations['check_health'](bad_config)
         assert False, "Expected error for invalid address"
-    except my_package.ConnectorError:
+    except operations_package.ConnectorError:
         assert True, f"Expected error for invalid address"
 
 
@@ -99,7 +105,7 @@ def test_rpc_get_invalid_json():
     params = {"url": "/dvmdb/devices", "data": "{"}
     try:
         response = operations['json_rpc_get'](config, params)
-    except my_package.ConnectorError as e:
+    except operations_package.ConnectorError as e:
         assert True, f"Expected error for invalid params"
 
 
@@ -107,7 +113,7 @@ def test_rpc_get_invalid_data():
     params = {"url": "/dvmdb/devices", "data": 123}
     try:
         response = operations['json_rpc_get'](config, params)
-    except my_package.ConnectorError as e:
+    except operations_package.ConnectorError as e:
         assert True, f"Expected error for invalid params"
 
 
@@ -118,7 +124,7 @@ def test_rpc_get_no_params():
             try:
                 response = operations[operation](config, params)
                 assert False, f"Expected error for missing params for operation {operation}"
-            except my_package.ConnectorError as e:
+            except operations_package.ConnectorError as e:
                 assert True, f"Expected error for missing params for operation {operation}"
 
 
@@ -130,7 +136,54 @@ def test_rpc_get_invalid_config():
     try:
         response = operations['json_rpc_get'](invalid_config, params)
     except Exception as e:
-        assert isinstance(e, my_package.ConnectorError), "Expected ConnectorError for invalid config"
+        assert isinstance(e, operations_package.ConnectorError), "Expected ConnectorError for invalid config"
+
+
+def test_adom_and_data_parse_functions():
+    payload = [
+        {
+            "params": {
+                "url": "/dvm/cmd/add/device",
+                "data": {
+                    "adom": "root",
+                    "flags": [
+                        "create_task",
+                        "nonblocking"
+                    ],
+                    "device": {
+                        "mr": 4,
+                        "sn": "FGT60F0123456789",
+                        "name": "",
+                        "patch": 0,
+                        "os_ver": 6,
+                        "os_type": "fos",
+                        "mgmt_mode": "fmg",
+                        "meta fields": {
+                            "Contact Email": "admin@test.com"
+                        },
+                        "device action": "add_model"
+                    }
+                },
+                "track_task": True
+            },
+            "adom": "root",
+            "action": "execute"
+        }
+    ]
+    for test in payload:
+        # Get the expected adom from the test payload
+        correct_adom = test.get("adom")
+        action = test.get("action")
+        params = test.get("params")
+
+        data = parse_data(params.get("data", {}))
+        url = params.get("url")
+        # To handle locking ADOM's when freeform action is used, I will pick the first url found and lock that adom.
+        if action == "free_form":
+            url = data.get("data", [])[0].get("url", url)
+        # Get the adom from the function
+        acquired_adom = parse_adom_from_input(url, data)
+        assert acquired_adom == correct_adom, f"Expected adom {correct_adom} but got {acquired_adom}"
 
 
 # Test the add operation by adding an address object
@@ -279,26 +332,26 @@ def test_rpc_freeform():
         "data": multi_data
     }
 
-#     {
-#         "method": "add",
-#         "data": [
-#             {
-#                 "url": "/pm/config/adom/root/obj/firewall/address/",
-#                 "data": [
-#                     {
-#                         "name": "host-172-23-200-121",
-#                         "subnet": [
-#                             "172.23.200.121",
-#                             "255.255.255.255"
-#                         ]
-#                     }
-#                 ]
-#             },
-#             {
-#                 "url": "/pm/config/adom/root/obj/firewall/address/",
-#                 "data": [
-#                 ...
-#
+    #     {
+    #         "method": "add",
+    #         "data": [
+    #             {
+    #                 "url": "/pm/config/adom/root/obj/firewall/address/",
+    #                 "data": [
+    #                     {
+    #                         "name": "host-172-23-200-121",
+    #                         "subnet": [
+    #                             "172.23.200.121",
+    #                             "255.255.255.255"
+    #                         ]
+    #                     }
+    #                 ]
+    #             },
+    #             {
+    #                 "url": "/pm/config/adom/root/obj/firewall/address/",
+    #                 "data": [
+    #                 ...
+    #
 
     response = operations['json_rpc_freeform'](config, params)
 
