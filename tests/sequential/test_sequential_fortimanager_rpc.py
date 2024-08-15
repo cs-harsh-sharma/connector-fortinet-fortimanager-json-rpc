@@ -32,8 +32,10 @@ operations = operations_package.operations
 # import the generic_json_rpc module
 generic_json_rpc_module_name = "fortinet-fortimanager-json-rpc.generic_json_rpc"
 generic_json_rpc_package = importlib.import_module(generic_json_rpc_module_name)
+
 # import the generic_json_rpc functions
 parse_adom_from_input = generic_json_rpc_package.parse_adom_from_input
+parse_task_timeout = generic_json_rpc_package.parse_task_timeout
 parse_data = generic_json_rpc_package.parse_data
 
 config = {
@@ -192,6 +194,34 @@ def test_adom_and_data_parse_functions():
         acquired_adom = parse_adom_from_input(url, data)
         assert acquired_adom == correct_adom, f"Expected adom {correct_adom} but got {acquired_adom}"
 
+
+def test_parse_task_timeout():
+    payload = [
+        {
+            "task_timeout": '',
+            "expected_task_timeout": 120
+        },
+        {
+            "task_timeout": 120,
+            "expected_task_timeout": 120
+        },
+        {
+            "task_timeout": 60,
+            "expected_task_timeout": 60
+        },
+        {
+            "expected_task_timeout": 120
+        },
+        {
+            "task_timeout": None,
+            "expected_task_timeout": 120
+        }
+    ]
+    for test in payload:
+        task_timeout = test.get("task_timeout")
+        expected_task_timeout = test.get("expected_task_timeout")
+        task_timeout = parse_task_timeout(task_timeout)
+        assert task_timeout == expected_task_timeout, f"Expected task_timeout {expected_task_timeout} but got {task_timeout}"
 
 # Test the add operation by adding an address object
 def test_rpc_add(setup_params):

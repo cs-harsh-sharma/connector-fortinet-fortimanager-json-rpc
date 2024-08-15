@@ -48,6 +48,22 @@ def parse_data(data: Union[list, bool, str, dict]):
     return data
 
 
+def parse_task_timeout(task_timeout, default=120):
+    """
+    Function to parse task_timeout from params.
+
+    :param task_timeout: task_timeout from params
+    :param default: Default timeout value if parsing fails.
+    :return: Parsed integer timeout value.
+    """
+    task_timeout = task_timeout or default
+    try:
+        task_timeout = int(task_timeout)
+    except ValueError:
+        task_timeout = default
+    return task_timeout
+
+
 def parse_adom_from_input(url: str, data: Union[list, dict]) -> str:
     match = re.search(r'/adom/([^/]+)/', url)
     if match:
@@ -148,7 +164,7 @@ def perform_rpc_action(action: str, config: dict, params: dict) -> dict:
             # If the action is execute and track_task is set to True, track the task
             if action == 'execute' and params.get("track_task", False):
                 task = action_response.get('task') or action_response.get('taskid')
-                task_timeout = int(params.get("task_timeout", 120)) or 120
+                task_timeout = parse_task_timeout(params.get("task_timeout"))
                 status, task_response = fmg.track_task(task, timeout=task_timeout)
                 response["task_response"] = task_response
                 # I'm not sure if we need to commit changes here after the task is tracked, but leaving it here for now
