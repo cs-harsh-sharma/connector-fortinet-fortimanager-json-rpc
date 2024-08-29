@@ -134,7 +134,10 @@ def perform_rpc_action(action: str, config: dict, params: dict) -> dict:
             url = params.get("url")
             # To handle locking ADOM's when freeform action is used, I will pick the first url found and lock that adom.
             if action == "free_form":
-                url = data.get("data", [])[0].get("url", url)
+                # make sure data is a list before accessing the first instance
+                if not isinstance(data.get("data", None), list):
+                    raise ConnectorError("Payload must be a list")
+                url = data["data"][0].get("url", url)
             adom = parse_adom_from_input(url, data)
             response = {}
 
