@@ -165,7 +165,8 @@ def perform_rpc_action(action: str, config: dict, params: dict) -> dict:
 
             response[f"{action}_response"] = action_response
             # If the action is execute and track_task is set to True, track the task
-            if action == 'execute' and params.get("track_task", False):
+            # Also need to make sure that the response is a dict because some exec actions like sys/proxy/info can return a list
+            if action == 'execute' and params.get("track_task", False) and isinstance(action_response, dict):
                 task = action_response.get('task') or action_response.get('taskid')
                 task_timeout = parse_task_timeout(params.get("task_timeout"))
                 status, task_response = fmg.track_task(task, timeout=task_timeout)
