@@ -16,9 +16,9 @@ Certified: No
 Following enhancements have been made to the Fortinet FortiManager JSON RPC Connector in version 1.0.5:
 
 <ul>
-<li>Added support to specify a task timeout on the execute action.</li>
-<li>Fixed issue with the freeform action.</li>
-<li>Added testing framework for all actions.</li>
+<li>Fixed small bug with freeform action with the execute method selected</li>
+<li>Fixed small bug with algorithm to parse the adom from the playbook parameters which resulted in the incorrect adom being locked for workspace mode scenarios</li>
+<li>Enhanced logging for workspace locking scenarios</li>
 </ul>
 
 ## Installing the connector
