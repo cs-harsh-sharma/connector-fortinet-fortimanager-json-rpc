@@ -4,7 +4,7 @@ The Fortinet FortiManager JSON RPC Connector is an advanced connector with freef
 
 ### Version information
 
-Connector Version: 1.0.4
+Connector Version: 1.0.5
 
 Authored By: Fortinet CSE
 
@@ -12,8 +12,8 @@ Contributors: Dylan Spille
 
 Certified: No
 
-## Release Notes for version 1.0.4
-Following enhancements have been made to the Fortinet FortiManager JSON RPC Connector in version 1.0.4:
+## Release Notes for version 1.0.5
+Following enhancements have been made to the Fortinet FortiManager JSON RPC Connector in version 1.0.5:
 
 <ul>
 <li>Added support to specify a task timeout on the execute action.</li>
@@ -117,7 +117,7 @@ The following automated operations can be included in playbooks and you can also
 
  The output contains a non-dictionary value.
 ## Included playbooks
-The `Sample - fortinet-fortimanager-json-rpc - 1.0.4` playbook collection comes bundled with the Fortinet FortiManager JSON RPC connector. These playbooks contain steps using which you can perform all supported actions. You can see bundled playbooks in the **Automation** > **Playbooks** section in FortiSOAR&trade; after importing the Fortinet FortiManager JSON RPC connector.
+The `Sample - fortinet-fortimanager-json-rpc - 1.0.5` playbook collection comes bundled with the Fortinet FortiManager JSON RPC connector. These playbooks contain steps using which you can perform all supported actions. You can see bundled playbooks in the **Automation** > **Playbooks** section in FortiSOAR&trade; after importing the Fortinet FortiManager JSON RPC connector.
 
 - JSON RPC Add
 - JSON RPC Delete

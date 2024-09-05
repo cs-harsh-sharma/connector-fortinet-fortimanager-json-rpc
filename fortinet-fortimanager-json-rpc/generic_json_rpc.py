@@ -48,6 +48,22 @@ def parse_data(data: Union[list, bool, str, dict]):
     return data
 
 
+def parse_task_timeout(task_timeout, default=120):
+    """
+    Function to parse task_timeout from params.
+
+    :param task_timeout: task_timeout from params
+    :param default: Default timeout value if parsing fails.
+    :return: Parsed integer timeout value.
+    """
+    task_timeout = task_timeout or default
+    try:
+        task_timeout = int(task_timeout)
+    except ValueError:
+        task_timeout = default
+    return task_timeout
+
+
 def parse_adom_from_input(url: str, data: Union[list, dict]) -> str:
     match = re.search(r'/adom/([^/]+)/', url)
     if match:
@@ -73,7 +89,7 @@ def parse_adom_from_input(url: str, data: Union[list, dict]) -> str:
                     return result
         return None
 
-    adom = extract_adom(data.get("data"))
+    adom = extract_adom(data)
     return adom if adom else "global"
 
 
@@ -81,10 +97,19 @@ def lock_adom(fmg, adom, url, data):
     for attempt in range(MAX_RETRY_LIMIT):
         status, _ = fmg.lock_adom(adom)
         # If the lock was acquired, break the loop
-        # status == -9 means that the url is invalid. this is a workaround for a pyFMG bug where uses_workspace is True when it should be False
-        if status == 0 or status == -9:
+        if status == 0:
             logger.debug(f"Acquired lock for ADOM: {adom} using URL: {url} with PAYLOAD: {data}.")
             return True
+        # status == -9 means that the command for the url is invalid. This happens when an adom is attempted to be
+        # locked when workspaces isn't enabled. This is a workaround for a pyFMG bug where uses_workspace is True when
+        # it should be False. That happens because pyFMG checks a 0 or 1 int, but verbose mode returns a string.
+        if status == -9:
+            logger.debug(f"Workspaces not enabled. Locking ADOM: {adom} not required.")
+            return True
+        # status == -6 when URL is invalid. This could occur when a nonexistent adom is attempted to be locked.
+        if status == -6:
+            logger.error(f"URL is invalid. ADOM: {adom} does not exist.")
+            return False
         if attempt < MAX_RETRY_LIMIT - 1:
             # Sleep for a random amount of time between 1 and 10 seconds
             sleep_time = random.randint(1, 10)
@@ -109,7 +134,10 @@ def perform_rpc_action(action: str, config: dict, params: dict) -> dict:
             url = params.get("url")
             # To handle locking ADOM's when freeform action is used, I will pick the first url found and lock that adom.
             if action == "free_form":
-                url = data.get("data", [])[0].get("url", url)
+                # make sure data is a list before accessing the first instance
+                if not isinstance(data.get("data", None), list):
+                    raise ConnectorError("Payload must be a list")
+                url = data["data"][0].get("url", url)
             adom = parse_adom_from_input(url, data)
             response = {}
 
@@ -137,9 +165,10 @@ def perform_rpc_action(action: str, config: dict, params: dict) -> dict:
 
             response[f"{action}_response"] = action_response
             # If the action is execute and track_task is set to True, track the task
-            if action == 'execute' and params.get("track_task", False):
+            # Also need to make sure that the response is a dict because some exec actions like sys/proxy/info can return a list
+            if action == 'execute' and params.get("track_task", False) and isinstance(action_response, dict):
                 task = action_response.get('task') or action_response.get('taskid')
-                task_timeout = int(params.get("task_timeout", 120)) or 120
+                task_timeout = parse_task_timeout(params.get("task_timeout"))
                 status, task_response = fmg.track_task(task, timeout=task_timeout)
                 response["task_response"] = task_response
                 # I'm not sure if we need to commit changes here after the task is tracked, but leaving it here for now
