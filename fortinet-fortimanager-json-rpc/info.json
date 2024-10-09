@@ -1,6 +1,6 @@
 {
   "name": "fortinet-fortimanager-json-rpc",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "label": "Fortinet FortiManager JSON RPC",
   "description": "The Fortinet FortiManager JSON RPC Connector is an advanced connector with freeform actions to use the JSON-RPC API directly. This connector puts the onus on the user to understand the FortiManager API. To use the connector that simplify actions please see the original Fortinet FortiManager Connector",
   "publisher": "Fortinet CSE",
@@ -8,7 +8,7 @@
   "cs_approved": false,
   "cs_compatible": true,
   "category": "Centralized Security Management",
-  "help_online": "https://github.com/fortinet-fortisoar/connector-fortinet-fortimanager-json-rpc/blob/release/1.0.5/docs/FortinetFortimanagerJsonRpcConnectorDoc.md",
+  "help_online": "https://github.com/fortinet-fortisoar/connector-fortinet-fortimanager-json-rpc/blob/release/1.0.6/docs/FortinetFortimanagerJsonRpcConnectorDoc.md",
   "icon_small_name": "FortiManager_small.png",
   "icon_large_name": "FortiManager_medium.png",
   "configuration": {
@@ -26,23 +26,56 @@
         "isOnChange": false
       },
       {
-        "name": "username",
-        "title": "Username",
-        "type": "text",
+        "title": "Authentication Method",
+        "required": true,
         "editable": true,
         "visible": true,
-        "required": true,
-        "description": "Username with JSON-RPC enabled to access the Fortinet FortiManager server to which you will connect and perform the automated operations.",
-        "isOnChange": false
-      },
-      {
-        "name": "password",
-        "title": "Password",
-        "type": "password",
-        "editable": true,
-        "visible": true,
-        "required": true,
-        "description": "Password to access the Fortinet FortiManager server to which you will connect and perform the automated operations.",
+        "type": "select",
+        "name": "auth_method",
+        "options": [
+          "Username/Password",
+          "API Key"
+        ],
+        "value": "Username/Password",
+        "onchange": {
+          "Username/Password": [
+            {
+              "name": "username",
+              "title": "Username",
+              "type": "text",
+              "editable": true,
+              "visible": true,
+              "required": true,
+              "description": "Username with JSON-RPC enabled to access the Fortinet FortiManager server to which you will connect and perform the automated operations.",
+              "isOnChange": false
+            },
+            {
+              "name": "password",
+              "title": "Password",
+              "type": "password",
+              "editable": true,
+              "visible": true,
+              "required": true,
+              "description": "Password to access the Fortinet FortiManager server to which you will connect and perform the automated operations.",
+              "isOnChange": false
+            }
+          ],
+          "API Key": [
+            {
+              "title": "API Key",
+              "required": true,
+              "editable": true,
+              "visible": true,
+              "type": "password",
+              "name": "api_key",
+              "description": "Enter your FortiManager api key",
+              "tooltip": "Your FortiManager api key",
+              "isOnChange": true,
+              "onChangeParam": "Authentication Method",
+              "onChangeOption": "Key"
+            }
+          ]
+        },
         "isOnChange": false
       },
       {
@@ -241,6 +274,7 @@
                 "editable": true,
                 "value": 150,
                 "description": "The time in seconds to wait for the task to complete before returning an error",
+                "tooltip": "The time in seconds to wait for the task to complete before returning an error",
                 "isOnChange": true,
                 "onChangeParam": "Track Task",
                 "onChangeOption": "true"

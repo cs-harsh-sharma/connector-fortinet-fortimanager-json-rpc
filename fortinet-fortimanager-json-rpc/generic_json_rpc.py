@@ -21,8 +21,16 @@ MAX_RETRY_LIMIT = 1500
 
 
 def get_config(config: dict) -> tuple:
+    auth_method = config.get("auth_method")
     server_url = clean_server_url(config.get('address', ''), config.get('port'))
-    return server_url, config.get("username"), config.get("password"), config.get("verify_ssl", None)
+    username = config.get("username", None)
+    password = config.get("password", None)
+    api_key = config.get("api_key", None)
+    verify_ssl = config.get("verify_ssl", True)
+    if auth_method == "API Key":
+        return server_url, None, None, api_key, verify_ssl
+    else:
+        return server_url, username, password, None, verify_ssl
 
 
 def clean_server_url(server_url: str, port: Union[str, None]) -> str:
@@ -123,10 +131,27 @@ def lock_adom(fmg, adom, url, data):
     return False
 
 
+def handle_special_cases(fmg, url, data, action_response, task_response=None):
+    special_cases = {
+        "/securityconsole/install/preview": {
+            "extra_url": "/securityconsole/preview/result",
+            "action": "execute"
+        },
+        # Add more special cases here as needed
+    }
+
+    if url in special_cases:
+        case = special_cases[url]
+        action_func = getattr(fmg, case["action"])
+        status, extra_response = action_func(url=case["extra_url"], **data)
+        return extra_response
+    return None
+
+
 def perform_rpc_action(action: str, config: dict, params: dict) -> dict:
-    server_host, username, password, verify_ssl = get_config(config)
+    server_host, username, password, api_key, verify_ssl = get_config(config)
     try:
-        with FortiManager(server_host, username, password, verify_ssl=verify_ssl,
+        with FortiManager(server_host, username, password, apikey=api_key, verify_ssl=verify_ssl,
                           debug=config.get("debug_connection", False),
                           verbose=config.get("verbose_json", True), disable_request_warnings=True) as fmg:
             action_func = getattr(fmg, action)
@@ -171,6 +196,12 @@ def perform_rpc_action(action: str, config: dict, params: dict) -> dict:
                 task_timeout = parse_task_timeout(params.get("task_timeout"))
                 status, task_response = fmg.track_task(task, timeout=task_timeout)
                 response["task_response"] = task_response
+
+                # Handle special cases. Putting this here because the task needs to be tracked first for exec actions
+                special_case_result = handle_special_cases(fmg, url, data, action_response, task_response)
+                if special_case_result:
+                    response["special_case_response"] = special_case_result
+
                 # I'm not sure if we need to commit changes here after the task is tracked, but leaving it here for now
                 if fmg._lock_ctx.uses_workspace:
                     fmg.commit_changes(adom)
