@@ -242,7 +242,8 @@
           "visible": true,
           "required": true,
           "placeholder": "/sys/login/user",
-          "description": "The url you wish to hit"
+          "description": "The url you wish to hit",
+            "tooltip": "The url you wish to hit"
         },
         {
           "name": "data",
@@ -252,7 +253,8 @@
           "visible": true,
           "required": true,
           "placeholder": {},
-          "description": "Pass a json object for the data you want to send. "
+          "description": "Pass a json object for the data you want to send.",
+            "tooltip": "Pass a json object for the data you want to send."
         },
         {
           "name": "track_task",
@@ -263,6 +265,7 @@
           "required": false,
           "value": false,
           "description": "Checking this box will attempt to track a task if found, and wait to return the output until that task is complete",
+          "tooltip": "Checking this box will attempt to track a task if found, and wait to return the output until that task is complete",
           "onchange": {
             "true": [
               {
@@ -288,6 +291,7 @@
                 "editable": true,
                 "value": 30,
                 "description": "Timeout of task that has not progressed past 0%",
+                "tooltip": "Timeout of task that has not progressed past 0%",
                 "isOnChange": true,
                 "onChangeParam": "Track Task",
                 "onChangeOption": "true"
@@ -301,6 +305,7 @@
                 "editable": true,
                 "value": 120,
                 "description": "Timeout of task that has started but has not progressed",
+                "tooltip": "Timeout of task that has started but has not progressed",
                 "isOnChange": true,
                 "onChangeParam": "Track Task",
                 "onChangeOption": "true"
@@ -314,6 +319,7 @@
                 "editable": true,
                 "value": true,
                 "description": "If a task fails to complete it should be deleted before starting a new task on the device",
+                "tooltip": "If a task fails to complete it should be deleted before starting a new task on the device",
                 "isOnChange": true,
                 "onChangeParam": "Track Task",
                 "onChangeOption": "true"
