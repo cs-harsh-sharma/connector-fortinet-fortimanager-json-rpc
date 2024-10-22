@@ -101,6 +101,26 @@ def parse_adom_from_input(url: str, data: Union[list, dict]) -> str:
     return adom if adom else "global"
 
 
+def parse_track_task_params(params):
+    """
+    Parse all track task related parameters with their defaults.
+
+    Args:
+        params (dict): Parameters from the request
+
+    Returns:
+        dict: Dictionary containing all track task parameters with their values
+    """
+    track_task_params = {
+        'timeout': parse_task_timeout(params.get('task_timeout', 21600)),
+        'timeout_only': False,  # Always set to False as per requirements
+        'zero_percent_timeout': parse_task_timeout(params.get('zero_percent_timeout', 30)),
+        'task_stale_timeout': parse_task_timeout(params.get('task_stale_timeout', 120)),
+        'delete_task_on_timeout': params.get('delete_task_on_timeout', True)
+    }
+    return track_task_params
+
+
 def lock_adom(fmg, adom, url, data):
     for attempt in range(MAX_RETRY_LIMIT):
         status, _ = fmg.lock_adom(adom)
@@ -193,8 +213,8 @@ def perform_rpc_action(action: str, config: dict, params: dict) -> dict:
             # Also need to make sure that the response is a dict because some exec actions like sys/proxy/info can return a list
             if action == 'execute' and params.get("track_task", False) and isinstance(action_response, dict):
                 task = action_response.get('task') or action_response.get('taskid')
-                task_timeout = parse_task_timeout(params.get("task_timeout"))
-                status, task_response = fmg.track_task(task, timeout=task_timeout)
+                track_task_params = parse_track_task_params(params)
+                status, task_response = fmg.track_task(task, **track_task_params)
                 response["task_response"] = task_response
 
                 # Handle special cases. Putting this here because the task needs to be tracked first for exec actions
