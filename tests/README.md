@@ -10,18 +10,28 @@
     ```
 3. Update the .env file with the required values to point to a FortiManager instance.
    - You must have a valid Hostname, Username, Password, and Port.
-   - The FMG user must have read-write JSON API permissions.
-4. Install the required packages.
+     - The FMG user must have read-write JSON API permissions.
+   - You must have a REST API user created on the FMG, and provide the key to the `API_KEY` variable.
+     - The REST API user must have read-write JSON API permissions.
+     - Make sure the IP of the machine running the tests is added on the FMG as a trusted host
+4. Create a virtual environment.
+    ```bash
+    python -m venv .venv
+    ```
+
+5. Install the required packages.
     ```bash
     pip install -r requirements.txt
     ```
-5. Run the following command to execute the tests.
+6. Run the following command to execute the tests.
    ```bash
    python run_tests.py
    ```
    - Each dot represents a test that passed.
    - **The tests are split into two sections, sequential and concurrent.** 
    - **The tests are ran twice, once with the FMG in workspace mode enabled and once with workspace mode disabled.**
+   - Every test is run once using user/password, and once using API key.
+   - Note that the exact number of tests may vary depending on updates to the test suite.
 
 - Sample output
    ```bash

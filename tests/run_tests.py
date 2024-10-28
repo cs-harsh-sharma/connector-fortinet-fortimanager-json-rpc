@@ -9,6 +9,7 @@ import importlib
 import os
 import subprocess
 import sys
+import time
 
 from dotenv import load_dotenv
 
@@ -33,6 +34,7 @@ operations = my_package.operations
 config = {
     "username": os.getenv("USERNAME"),
     "password": os.getenv("PASSWORD"),
+    "auth_method": os.getenv("AUTH_METHOD"),
     "address": os.getenv("ADDRESS"),
     "verify_ssl": os.getenv("VERIFY_SSL", "False").lower() in ("true", "1", "t"),
     "port": os.getenv("PORT"),
@@ -73,19 +75,28 @@ def update_server_value(new_value):
 
 
 def execute_tests():
-    # Run sequential tests
-    result = subprocess.run(["pytest", "sequential"], check=True)
-    if result.returncode != 0:
-        print("Sequential tests failed")
-        return result.returncode
+    try:
+        # Run concurrent tests for Username/Password
+        print("Running concurrent tests with Username/Password authentication...")
+        subprocess.run(["pytest", "concurrent", "-n", "4", "-v", "-m", "user_pass"], check=True)
+        print("Concurrent tests with Username/Password authentication completed successfully.")
 
-    # Run concurrent tests with 4 workers
-    result = subprocess.run(["pytest", "concurrent", "-n", "4", '-v'], check=True)
-    if result.returncode != 0:
-        print("Concurrent tests failed")
-        return result.returncode
+        # Run concurrent tests for API Key
+        print("Running concurrent tests with API Key authentication...")
+        subprocess.run(["pytest", "concurrent", "-n", "4", "-v", "-m", "api_key"], check=True)
+        print("Concurrent tests with API Key authentication completed successfully.")
 
-    print("All tests passed")
+        # Run sequential tests
+        print("Running sequential tests...")
+        subprocess.run(["pytest", "sequential", "-v"], check=True)
+        print("Sequential tests completed successfully.")
+
+        print("All tests completed successfully!")
+        return 0
+
+    except subprocess.CalledProcessError as e:
+        print(f"Tests failed with return code {e.returncode}")
+        return e.returncode
 
 
 def run_tests():
@@ -93,6 +104,8 @@ def run_tests():
     new_value = 1 if original_value == 0 else 0
     execute_tests()
     update_server_value(new_value)
+    # sleep for 10 seconds to allow fmg time to update the workspace mode
+    time.sleep(10)
     execute_tests()
     update_server_value(original_value)
 

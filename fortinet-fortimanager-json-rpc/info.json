@@ -1,6 +1,6 @@
 {
   "name": "fortinet-fortimanager-json-rpc",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "label": "Fortinet FortiManager JSON RPC",
   "description": "The Fortinet FortiManager JSON RPC Connector is an advanced connector with freeform actions to use the JSON-RPC API directly. This connector puts the onus on the user to understand the FortiManager API. To use the connector that simplify actions please see the original Fortinet FortiManager Connector",
   "publisher": "Fortinet CSE",
@@ -8,7 +8,7 @@
   "cs_approved": false,
   "cs_compatible": true,
   "category": "Centralized Security Management",
-  "help_online": "https://github.com/fortinet-fortisoar/connector-fortinet-fortimanager-json-rpc/blob/release/1.0.5/docs/FortinetFortimanagerJsonRpcConnectorDoc.md",
+  "help_online": "https://github.com/fortinet-fortisoar/connector-fortinet-fortimanager-json-rpc/blob/release/1.0.6/docs/FortinetFortimanagerJsonRpcConnectorDoc.md",
   "icon_small_name": "FortiManager_small.png",
   "icon_large_name": "FortiManager_medium.png",
   "configuration": {
@@ -26,23 +26,56 @@
         "isOnChange": false
       },
       {
-        "name": "username",
-        "title": "Username",
-        "type": "text",
+        "title": "Authentication Method",
+        "required": true,
         "editable": true,
         "visible": true,
-        "required": true,
-        "description": "Username with JSON-RPC enabled to access the Fortinet FortiManager server to which you will connect and perform the automated operations.",
-        "isOnChange": false
-      },
-      {
-        "name": "password",
-        "title": "Password",
-        "type": "password",
-        "editable": true,
-        "visible": true,
-        "required": true,
-        "description": "Password to access the Fortinet FortiManager server to which you will connect and perform the automated operations.",
+        "type": "select",
+        "name": "auth_method",
+        "options": [
+          "Username/Password",
+          "API Key"
+        ],
+        "value": "Username/Password",
+        "onchange": {
+          "Username/Password": [
+            {
+              "name": "username",
+              "title": "Username",
+              "type": "text",
+              "editable": true,
+              "visible": true,
+              "required": true,
+              "description": "Username with JSON-RPC enabled to access the Fortinet FortiManager server to which you will connect and perform the automated operations.",
+              "isOnChange": false
+            },
+            {
+              "name": "password",
+              "title": "Password",
+              "type": "password",
+              "editable": true,
+              "visible": true,
+              "required": true,
+              "description": "Password to access the Fortinet FortiManager server to which you will connect and perform the automated operations.",
+              "isOnChange": false
+            }
+          ],
+          "API Key": [
+            {
+              "title": "API Key",
+              "required": true,
+              "editable": true,
+              "visible": true,
+              "type": "password",
+              "name": "api_key",
+              "description": "Enter your FortiManager api key",
+              "tooltip": "Your FortiManager api key",
+              "isOnChange": true,
+              "onChangeParam": "Authentication Method",
+              "onChangeOption": "Key"
+            }
+          ]
+        },
         "isOnChange": false
       },
       {
@@ -209,7 +242,8 @@
           "visible": true,
           "required": true,
           "placeholder": "/sys/login/user",
-          "description": "The url you wish to hit"
+          "description": "The url you wish to hit",
+            "tooltip": "The url you wish to hit"
         },
         {
           "name": "data",
@@ -219,7 +253,8 @@
           "visible": true,
           "required": true,
           "placeholder": {},
-          "description": "Pass a json object for the data you want to send. "
+          "description": "Pass a json object for the data you want to send.",
+            "tooltip": "Pass a json object for the data you want to send."
         },
         {
           "name": "track_task",
@@ -230,6 +265,7 @@
           "required": false,
           "value": false,
           "description": "Checking this box will attempt to track a task if found, and wait to return the output until that task is complete",
+          "tooltip": "Checking this box will attempt to track a task if found, and wait to return the output until that task is complete",
           "onchange": {
             "true": [
               {
@@ -239,8 +275,51 @@
                 "required": false,
                 "visible": true,
                 "editable": true,
-                "value": 150,
+                "value": 21600,
                 "description": "The time in seconds to wait for the task to complete before returning an error",
+                "tooltip": "The time in seconds to wait for the task to complete before returning an error",
+                "isOnChange": true,
+                "onChangeParam": "Track Task",
+                "onChangeOption": "true"
+              },
+              {
+                "title": "Zero Percent Timeout",
+                "type": "integer",
+                "name": "zero_percent_timeout",
+                "required": false,
+                "visible": true,
+                "editable": true,
+                "value": 30,
+                "description": "Timeout of task that has not progressed past 0%",
+                "tooltip": "Timeout of task that has not progressed past 0%",
+                "isOnChange": true,
+                "onChangeParam": "Track Task",
+                "onChangeOption": "true"
+              },
+              {
+                "title": "Task Stale Timeout",
+                "type": "integer",
+                "name": "task_stale_timeout",
+                "required": false,
+                "visible": true,
+                "editable": true,
+                "value": 120,
+                "description": "Timeout of task that has started but has not progressed",
+                "tooltip": "Timeout of task that has started but has not progressed",
+                "isOnChange": true,
+                "onChangeParam": "Track Task",
+                "onChangeOption": "true"
+              },
+              {
+                "title": "Delete Task On Timeout",
+                "type": "checkbox",
+                "name": "delete_task_on_timeout",
+                "required": false,
+                "visible": true,
+                "editable": true,
+                "value": true,
+                "description": "If a task fails to complete it should be deleted before starting a new task on the device",
+                "tooltip": "If a task fails to complete it should be deleted before starting a new task on the device",
                 "isOnChange": true,
                 "onChangeParam": "Track Task",
                 "onChangeOption": "true"
