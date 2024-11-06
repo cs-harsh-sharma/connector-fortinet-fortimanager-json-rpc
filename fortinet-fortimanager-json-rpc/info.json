@@ -32,6 +32,7 @@
         "visible": true,
         "type": "select",
         "name": "auth_method",
+        "description": "Select the method using which you will authenticate to the Fortinet FortiManager server.",
         "options": [
           "Username/Password",
           "API Key"
